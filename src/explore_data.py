@@ -11,45 +11,79 @@ with urllib.request.urlopen(url) as response:
 with urllib.request.urlopen(matches_url) as response:
     matches = json.load(response)
 
-match_id = matches[0]["match_id"]
+data_frames = []
+def analyze_match(match):
+    match_id = match["match_id"]
+    print(f"Analyzing match ID: {match_id}")
+    
+    events_url = (
+        f"https://raw.githubusercontent.com/statsbomb/open-data/"
+        f"master/data/events/{match_id}.json"
+    )
 
-events_url = (
-    f"https://raw.githubusercontent.com/statsbomb/open-data/"
-    f"master/data/events/{match_id}.json"
-)
+    with urllib.request.urlopen(events_url) as response:
+        events = json.load(response)
 
-with urllib.request.urlopen(events_url) as response:
-    events = json.load(response)
+    shots = []
 
-shots = []
+    for event in events:
+        if event["type"]["name"] == "Shot":
+            shots.append(event)
 
-for event in events:
-    if event["type"]["name"] == "Shot":
-        shots.append(event)
+    shot_counts = {}
 
-shot_counts = {}
+    for shot in shots:
+        team = shot["team"]["name"]
 
-for shot in shots:
-    team = shot["team"]["name"]
+        if team not in shot_counts:
+            shot_counts[team] = 0
 
-    if team not in shot_counts:
-        shot_counts[team] = 0
+        shot_counts[team] += 1
 
-    shot_counts[team] += 1
+    xg_by_team = {}
 
-xg_by_team = {}
+    for shot in shots:
+        team = shot["team"]["name"]
+        xg = shot["shot"]["statsbomb_xg"]
 
-for shot in shots:
-    team = shot["team"]["name"]
-    xg = shot["shot"]["statsbomb_xg"]
+        if team not in xg_by_team:
+            xg_by_team[team] = 0
 
-    if team not in xg_by_team:
-        xg_by_team[team] = 0
+        xg_by_team[team] += xg
 
-    xg_by_team[team] += xg
+    goals_by_team = {
+        match["home_team"]["home_team_name"]: match["home_score"],
+        match["away_team"]["away_team_name"]: match["away_score"]
+    }
 
-print("\nxG by team:")
-print(xg_by_team)
+    shot_analysis = pd.DataFrame({
+        "Team": list(shot_counts.keys()),
+        "Shots": list(shot_counts.values()),
+        "xG": [
+            xg_by_team[team]
+            for team in shot_counts.keys()
+        ],
+        "Goals": [
+            goals_by_team[team]
+            for team in shot_counts.keys()
+        ]
+    })
+
+    shot_analysis["xG_per_shot"] = (
+        shot_analysis["xG"] / shot_analysis["Shots"]
+    )
+
+    shot_analysis["Goals_minus_xG"] = (
+        shot_analysis["Goals"] - shot_analysis["xG"]
+    )
+
+    return shot_analysis
+
+for match in matches:
+    shot_analysis = analyze_match(match)
+    data_frames.append(shot_analysis)
+
+print(f"\nAnalyzed {len(data_frames)} matches.")
 
 
 def calculate_team_stats(matches, team):
@@ -120,13 +154,10 @@ df["goal_difference"] = df["goals_for"] - df["goals_against"]
 df["matches_played"] = df["wins"] + df["draws"] + df["losses"]
 
 df["points_per_match"] = df["points"] / df["matches_played"]
-df["points_per_match"] = df["points_per_match"].round(2)
 
 df["goals_per_match"] = df["goals_for"] / df["matches_played"]
-df["goals_per_match"] = df["goals_per_match"].round(2)
 
 df["goals_against_per_match"] = df["goals_against"] / df["matches_played"]
-df["goals_against_per_match"] = df["goals_against_per_match"].round(2)
 
 df = df.sort_values(
     ["points", "goal_difference"],
@@ -147,7 +178,7 @@ df = df.rename(columns={
     "points": "Pts"
 })
 
-best_attack =df.sort_values(
+best_attack = df.sort_values(
     "goals_per_match",
     ascending=False
 )
