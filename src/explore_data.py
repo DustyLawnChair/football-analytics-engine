@@ -11,6 +11,46 @@ with urllib.request.urlopen(url) as response:
 with urllib.request.urlopen(matches_url) as response:
     matches = json.load(response)
 
+match_id = matches[0]["match_id"]
+
+events_url = (
+    f"https://raw.githubusercontent.com/statsbomb/open-data/"
+    f"master/data/events/{match_id}.json"
+)
+
+with urllib.request.urlopen(events_url) as response:
+    events = json.load(response)
+
+shots = []
+
+for event in events:
+    if event["type"]["name"] == "Shot":
+        shots.append(event)
+
+shot_counts = {}
+
+for shot in shots:
+    team = shot["team"]["name"]
+
+    if team not in shot_counts:
+        shot_counts[team] = 0
+
+    shot_counts[team] += 1
+
+xg_by_team = {}
+
+for shot in shots:
+    team = shot["team"]["name"]
+    xg = shot["shot"]["statsbomb_xg"]
+
+    if team not in xg_by_team:
+        xg_by_team[team] = 0
+
+    xg_by_team[team] += xg
+
+print("\nxG by team:")
+print(xg_by_team)
+
 
 def calculate_team_stats(matches, team):
     wins = 0
@@ -74,7 +114,6 @@ for team in teams:
 
 df = pd.DataFrame(team_stats)
 
-df = pd.DataFrame(team_stats)
 
 df["goal_difference"] = df["goals_for"] - df["goals_against"]
 
@@ -93,9 +132,6 @@ df = df.sort_values(
     ["points", "goal_difference"],
     ascending=[False, False]
 )
-df = df.sort_values(
-    ["points", "goal_difference"],
-    ascending=[False, False])
 
 
 df["Position"] = range(1, len(df) + 1)
@@ -139,14 +175,106 @@ df = df[
 
 df = df.reset_index(drop=True)
 
+def normalize_metric(df, column, higher_is_better=True):
+    min_value = df[column].min()
+    max_value = df[column].max()
+
+    normalized = (df[column] - min_value) / (max_value - min_value)
+
+    if not higher_is_better:
+        normalized = 1 - normalized
+
+    return normalized
+
+df["attack_score"] = normalize_metric(
+    df,
+    "goals_per_match"
+)
+
+df["defense_score"] = normalize_metric(
+    df,
+    "goals_against_per_match",
+    higher_is_better=False
+)
+
+df["results_score"] = normalize_metric(
+    df,
+    "points_per_match"
+)
+
+df["overall_score"] = (
+    df["attack_score"] * 0.30 +
+    df["defense_score"] * 0.30 +
+    df["results_score"] * 0.40
+)
+
 def rank_teams(df, metric):
     sorted_df = df.sort_values(metric, ascending=False)
     return sorted_df
 
-print(rank_teams(df, "goals_per_match"))
-rank_teams(df, "points_per_match")
-rank_teams(df, "GD")
-rank_teams(df, "goals_per_match")
+def top_teams(df, metric, n=5):
+    return df.sort_values(metric, ascending=False).head(n)
+
+def get_best_defenses(df, n=5):
+    return df.sort_values(
+        "goals_against_per_match",
+        ascending=True
+    ).head(n)
+
+
+print("\nTop teams by points per match:")
+print(rank_teams(df, "points_per_match").head(5)[
+    ["Team", "points_per_match"]
+])
+
+print("\nTop teams by goal difference:")
+print(rank_teams(df, "GD").head(5)[
+    ["Team", "GD"]
+])
+
+print("\nTop teams by goals per match:")
+print(rank_teams(df, "goals_per_match").head(5)[
+    ["Team", "goals_per_match"]
+])
+
+print("\nBest defenses:")
+print(
+    get_best_defenses(df)[
+        ["Team", "goals_against_per_match"]
+    ]
+)
+
+print("\nNormalized team scores:")
+print(
+    df[
+        [
+            "Team",
+            "attack_score",
+            "defense_score",
+            "results_score"
+        ]
+    ].sort_values(
+        "results_score",
+        ascending=False
+    )
+)
+
+print("\nOverall team performance:")
+print(
+    df.sort_values(
+        "overall_score",
+        ascending=False
+    ).head(5)[
+        [
+            "Team",
+            "attack_score",
+            "defense_score",
+            "results_score",
+            "overall_score"
+        ]
+    ]
+)
+
 
 
 
