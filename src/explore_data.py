@@ -1,6 +1,7 @@
 import json
 import urllib.request
 import pandas as pd
+import os
 
 url = "https://raw.githubusercontent.com/statsbomb/open-data/master/data/competitions.json"
 matches_url = "https://raw.githubusercontent.com/statsbomb/open-data/master/data/matches/2/27.json"
@@ -12,17 +13,32 @@ with urllib.request.urlopen(matches_url) as response:
     matches = json.load(response)
 
 data_frames = []
+
 def analyze_match(match):
     match_id = match["match_id"]
     print(f"Analyzing match ID: {match_id}")
-    
-    events_url = (
-        f"https://raw.githubusercontent.com/statsbomb/open-data/"
-        f"master/data/events/{match_id}.json"
-    )
 
-    with urllib.request.urlopen(events_url) as response:
-        events = json.load(response)
+    events_file = f"data/events/{match_id}.json"
+
+    if os.path.exists(events_file):
+        print(f"Loading cached events: {match_id}")
+
+        with open(events_file, "r") as file:
+            events = json.load(file)
+
+    else:
+        print(f"Downloading events: {match_id}")
+
+        events_url = (
+            f"https://raw.githubusercontent.com/statsbomb/open-data/"
+            f"master/data/events/{match_id}.json"
+        )
+
+        with urllib.request.urlopen(events_url) as response:
+            events = json.load(response)
+
+        with open(events_file, "w") as file:
+            json.dump(events, file)
 
     shots = []
 
@@ -79,12 +95,17 @@ def analyze_match(match):
 
     return shot_analysis
 
+
 for match in matches:
     shot_analysis = analyze_match(match)
     data_frames.append(shot_analysis)
 
 print(f"\nAnalyzed {len(data_frames)} matches.")
 
+season_shot_analysis = pd.concat(data_frames, ignore_index=True)
+
+print("\nSeason shot analysis:")
+print(season_shot_analysis)
 
 def calculate_team_stats(matches, team):
     wins = 0
