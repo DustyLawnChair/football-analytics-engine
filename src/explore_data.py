@@ -104,8 +104,44 @@ print(f"\nAnalyzed {len(data_frames)} matches.")
 
 season_shot_analysis = pd.concat(data_frames, ignore_index=True)
 
-print("\nSeason shot analysis:")
-print(season_shot_analysis)
+team_shot_groups = season_shot_analysis.groupby("Team")
+
+team_shot_analysis = team_shot_groups[
+    ["Shots", "xG", "Goals"]
+].sum()
+
+team_shot_analysis["xG_per_shot"] = (
+    team_shot_analysis["xG"] / team_shot_analysis["Shots"]
+)
+
+team_shot_analysis["Goals_minus_xG"] = (
+    team_shot_analysis["Goals"] - team_shot_analysis["xG"]
+)
+
+print("\nTop teams by xG:")
+print(
+    team_shot_analysis.sort_values(
+        "xG",
+        ascending=False
+    )[["xG"]].head(5)
+)
+
+print("\nBest finishing relative to xG:")
+print(
+    team_shot_analysis.sort_values(
+        "Goals_minus_xG",
+        ascending=False
+    )[["Goals", "xG", "Goals_minus_xG"]].head(5)
+)
+
+print("\nWorst finishing relative to xG:")
+print(
+    team_shot_analysis.sort_values(
+        "Goals_minus_xG",
+        ascending=True
+    )[["Goals", "xG", "Goals_minus_xG"]].head(5)
+)
+
 
 def calculate_team_stats(matches, team):
     wins = 0
