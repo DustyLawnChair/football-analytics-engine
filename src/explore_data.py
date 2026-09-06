@@ -1,6 +1,7 @@
 import json
 import urllib.request
 import pandas as pd
+import matplotlib.pyplot as plt
 import os
 
 url = "https://raw.githubusercontent.com/statsbomb/open-data/master/data/competitions.json"
@@ -363,6 +364,34 @@ print(
     ]
 )
 
+plt.scatter(
+    team_shot_analysis["Shots"],
+    team_shot_analysis["Goals"]
+)
+
+for team, row in team_shot_analysis.iterrows():
+    plt.annotate(
+        team,
+        (row["Shots"], row["Goals"])
+    )
+
+plt.xlabel("Shots")
+plt.ylabel("Goals")
+plt.title("Shots vs Goals — 2015/16 Premier League")
+
+plt.show()
+
+
+plt.scatter(
+    team_shot_analysis["Shots"],
+    team_shot_analysis["xG"]
+)
+
+plt.xlabel("Shots")
+plt.ylabel("xG")
+plt.title("Shots vs Expected Goals — 2015/16 Premier League")
+
+plt.show()
 
 
 
