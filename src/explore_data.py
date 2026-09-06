@@ -364,6 +364,20 @@ print(
     ]
 )
 
+print("\nBest shot quality:")
+print(
+    team_shot_analysis.sort_values(
+        "xG_per_shot",
+        ascending=False
+    )[["Shots", "xG", "xG_per_shot"]].head(5)
+)
+
+correlation = team_shot_analysis["Shots"].corr(
+    team_shot_analysis["Goals"]
+)
+
+print(f"\nShots vs Goals correlation: {correlation:.3f}")
+
 plt.scatter(
     team_shot_analysis["Shots"],
     team_shot_analysis["Goals"]
