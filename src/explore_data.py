@@ -3,6 +3,7 @@ import urllib.request
 import pandas as pd
 import os
 import math
+import matplotlib.pyplot as plt
 
 url = "https://raw.githubusercontent.com/statsbomb/open-data/master/data/competitions.json"
 matches_url = "https://raw.githubusercontent.com/statsbomb/open-data/master/data/matches/2/27.json"
@@ -65,6 +66,7 @@ def analyze_match(match):
 
             shot_records.append({
                 "Team": event["team"]["name"],
+                "Player": event["player"]["name"],
                 "x": x,
                 "y": y,
                 "xG": event["shot"]["statsbomb_xg"],
@@ -263,6 +265,141 @@ print(
     finishing
     .sort_values("Goals_minus_xG", ascending=False)
 )
+
+plt.scatter(
+    finishing["Shots"],
+    finishing["Goals"]
+)
+
+for team in finishing.index:
+    plt.annotate(
+        team,
+        (
+            finishing.loc[team, "Shots"],
+            finishing.loc[team, "Goals"]
+        )
+    )
+
+plt.xlabel("Shots")
+plt.ylabel("Goals")
+plt.title("Team Shots vs Goals — 2015/16 Premier League")
+
+plt.show()
+
+plt.scatter(
+    finishing["xG"],
+    finishing["Goals"]
+)
+
+for team in finishing.index:
+    plt.annotate(
+        team,
+        (
+            finishing.loc[team, "xG"],
+            finishing.loc[team, "Goals"]
+        )
+    )
+
+plt.plot(
+    [finishing["xG"].min(), finishing["xG"].max()],
+    [finishing["xG"].min(), finishing["xG"].max()]
+)
+
+plt.xlabel("Expected Goals (xG)")
+plt.ylabel("Actual Goals")
+plt.title("Team xG vs Actual Goals — 2015/16 Premier League")
+
+plt.show()
+
+
+print("\nPlayer shooting analysis:")
+
+player_shooting = (
+    shot_data
+    .groupby("Player")
+    .agg(
+        Shots=("xG", "count"),
+        xG=("xG", "sum")
+    )
+)
+
+player_goals = (
+    shot_data[shot_data["Outcome"] == "Goal"]
+    .groupby("Player")
+    .size()
+    .rename("Goals")
+)
+
+player_shooting = player_shooting.join(
+    player_goals,
+    how="left"
+)
+
+player_shooting["Goals"] = player_shooting["Goals"].fillna(0)
+
+player_shooting["xG_per_shot"] = (
+    player_shooting["xG"] /
+    player_shooting["Shots"]
+)
+
+player_shooting["Goals_minus_xG"] = (
+    player_shooting["Goals"] -
+    player_shooting["xG"]
+)
+
+player_shooting["Conversion_Rate"] = (
+    player_shooting["Goals"] /
+    player_shooting["Shots"] * 100
+)
+
+qualified_players = player_shooting[
+    player_shooting["Shots"] >= 50
+]
+
+print("\nTop players by finishing above xG:")
+
+print(
+    qualified_players
+    .sort_values("Goals_minus_xG", ascending=False)
+    .head(15)
+    .to_string()
+)
+
+print(
+    player_shooting
+    .sort_values("xG", ascending=False)
+    .head(20)
+)
+
+top_players = qualified_players.sort_values(
+    "xG",
+    ascending=False
+).head(10)
+
+plt.scatter(
+    qualified_players["xG"],
+    qualified_players["Goals"]
+)
+
+for player in top_players.index:
+    plt.annotate(
+        player,
+        (
+            top_players.loc[player, "xG"],
+            top_players.loc[player, "Goals"]
+        )
+    )
+
+plt.plot(
+    [qualified_players["xG"].min(), qualified_players["xG"].max()],
+    [qualified_players["xG"].min(), qualified_players["xG"].max()]
+)
+
+plt.xlabel("Expected Goals (xG)")
+plt.ylabel("Actual Goals")
+plt.title("Player xG vs Actual Goals — 2015/16 Premier League")
+
+plt.show()
 
 def calculate_team_stats(matches, team):
     wins = 0
