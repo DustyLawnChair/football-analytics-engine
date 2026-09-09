@@ -2,6 +2,7 @@ import json
 import urllib.request
 import pandas as pd
 import os
+import math
 
 url = "https://raw.githubusercontent.com/statsbomb/open-data/master/data/competitions.json"
 matches_url = "https://raw.githubusercontent.com/statsbomb/open-data/master/data/matches/2/27.json"
@@ -39,11 +40,39 @@ def analyze_match(match):
             json.dump(events, file)
 
     shots = []
+    shot_records = []
 
     for event in events:
         if event["type"]["name"] == "Shot":
             shots.append(event)
 
+            x = event["location"][0]
+            y = event["location"][1]
+
+            left_goal_distance = math.sqrt(
+                x ** 2 +
+                (40 - y) ** 2
+            )
+
+            right_goal_distance = math.sqrt(
+                (120 - x) ** 2 +
+                (40 - y) ** 2
+            )
+
+            distance = min(left_goal_distance, right_goal_distance)
+
+            event["shot_distance"] = distance
+
+            shot_records.append({
+                "Team": event["team"]["name"],
+                "x": x,
+                "y": y,
+                "xG": event["shot"]["statsbomb_xg"],
+                "Distance": distance,
+                "Outcome": event["shot"]["outcome"]["name"],
+                "Body Part": event["shot"]["body_part"]["name"],
+                "Shot Type": event["shot"]["type"]["name"]
+            })
     shot_counts = {}
 
     for shot in shots:
@@ -91,13 +120,15 @@ def analyze_match(match):
         shot_analysis["Goals"] - shot_analysis["xG"]
     )
 
-    return shot_analysis
+    return shot_analysis, shot_records
 
 data_frames = []
+all_shot_records = []
 
 for match in matches:
-    shot_analysis = analyze_match(match)
+    shot_analysis, shot_records = analyze_match(match)
     data_frames.append(shot_analysis)
+    all_shot_records.extend(shot_records)
 
 print(f"\nAnalyzed {len(data_frames)} matches.")
 
@@ -115,8 +146,123 @@ print(team_shot_analysis.loc["Leicester City"])
 
 print("\nGROUPED SHOT DATA TEST 123:")
 print(team_shot_analysis)
+
+shot_data = pd.DataFrame(all_shot_records)
+
+print("\nAnalyzed matches:", len(data_frames))
+print("Total shots:", len(shot_data))
+
+print("\nShot distance summary:")
+print(shot_data["Distance"].describe())
+
+print("\nAverage xG by shot distance:")
+distance_bins = pd.cut(
+    shot_data["Distance"],
+    bins=[0, 10, 15, 20, 25, 30, 40, 100]
+)
+
+print(
+    shot_data.groupby(
+        distance_bins,
+        observed=True
+    )["xG"].mean()
+)
+
+print("\nTeam shot profile:")
+team_shot_profile = (
+    shot_data
+    .groupby("Team")
+    .agg(
+        Shots=("xG", "count"),
+        Avg_Distance=("Distance", "mean"),
+        Avg_xG=("xG", "mean"),
+        Total_xG=("xG", "sum")
+    )
+    .sort_values("Avg_xG", ascending=False)
+)
+
+print(team_shot_profile)
+
+# Create shot zones based on lateral position
+shot_data["Shot_Zone"] = pd.cut(
+    shot_data["y"],
+    bins=[0, 20, 30, 50, 60, 80],
+    labels=[
+        "Wide Left",
+        "Left-Centre",
+        "Centre",
+        "Right-Centre",
+        "Wide Right"
+    ]
+)
+
+print("\nPercentage of shots from inside 15 meters:")
+
+close_shot_percentage = (
+    shot_data["Distance"]
+    .le(15)
+    .groupby(shot_data["Team"])
+    .mean()
+    .mul(100)
+    .sort_values(ascending=False)
+)
+
+print(close_shot_percentage)
+
+print("\nPercentage of xG from shots inside 15 meters:")
+
+close_xg_percentage = (
+    shot_data[shot_data["Distance"] <= 15]
+    .groupby("Team")["xG"]
+    .sum()
+    .div(
+        shot_data.groupby("Team")["xG"].sum()
+    )
+    .mul(100)
+    .sort_values(ascending=False)
+)
+
+print(close_xg_percentage)
+
+print("\nIndividual shot data:")
+print(shot_data.head())
 print("\nSeason shot analysis:")
-print(season_shot_analysis)
+print(season_shot_analysis.head())
+
+print("\nFinishing efficiency:")
+
+finishing = (
+    shot_data
+    .groupby("Team")
+    .agg(
+        Shots=("xG", "count"),
+        xG=("xG", "sum")
+    )
+)
+
+goals = (
+    shot_data[shot_data["Outcome"] == "Goal"]
+    .groupby("Team")
+    .size()
+    .rename("Goals")
+)
+
+finishing = finishing.join(goals, how="left")
+
+finishing["Goals"] = finishing["Goals"].fillna(0)
+
+finishing["Goals_minus_xG"] = (
+    finishing["Goals"] - finishing["xG"]
+)
+
+finishing["Conversion_Rate"] = (
+    finishing["Goals"] / finishing["Shots"] * 100
+)
+
+print(
+    finishing
+    .sort_values("Goals_minus_xG", ascending=False)
+)
 
 def calculate_team_stats(matches, team):
     wins = 0
@@ -180,8 +326,6 @@ for team in teams:
 
 df = pd.DataFrame(team_stats)
 
-df = pd.DataFrame(team_stats)
-
 df["goal_difference"] = df["goals_for"] - df["goals_against"]
 
 df["matches_played"] = df["wins"] + df["draws"] + df["losses"]
@@ -199,10 +343,6 @@ df = df.sort_values(
     ["points", "goal_difference"],
     ascending=[False, False]
 )
-df = df.sort_values(
-    ["points", "goal_difference"],
-    ascending=[False, False])
-
 
 df["Position"] = range(1, len(df) + 1)
 
