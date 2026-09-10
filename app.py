@@ -101,6 +101,31 @@ shot_col4.metric(
     f"{team_shots['Outcome'].eq('Goal').sum() - team_shots['xG'].sum():.2f}"
 )
 
+st.subheader("Shot Quality by Distance")
+
+distance_bins = [0, 10, 15, 20, 25, 30, 40, 100]
+
+team_shots["Distance_Bin"] = pd.cut(
+    team_shots["Distance"],
+    bins=distance_bins
+)
+
+distance_xg = (
+    team_shots
+    .groupby("Distance_Bin", observed=False)["xG"]
+    .mean()
+    .reset_index()
+)
+
+distance_xg["Distance_Bin"] = distance_xg["Distance_Bin"].astype(str)
+
+st.bar_chart(
+    distance_xg,
+    x="Distance_Bin",
+    y="xG",
+    width="stretch"
+)
+
 
 # -----------------------------
 # League Overview
