@@ -48,6 +48,17 @@ team_shots = shot_data[
     shot_data["Team"] == selected_team
 ]
 
+players = sorted(shot_data["Player"].unique())
+
+selected_player = st.sidebar.selectbox(
+    "Select a player",
+    players
+)
+
+player_shots = shot_data[
+    shot_data["Player"] == selected_player
+]
+
 
 # -----------------------------
 # Team Profile
@@ -140,6 +151,30 @@ st.bar_chart(
     x="Shot_Zone",
     y="Shots",
     width="stretch"
+)
+
+st.header(f"{selected_player} — Player Profile")
+
+player_col1, player_col2, player_col3, player_col4 = st.columns(4)
+
+player_col1.metric(
+    "Shots",
+    len(player_shots)
+)
+
+player_col2.metric(
+    "Goals",
+    int(player_shots["Outcome"].eq("Goal").sum())
+)
+
+player_col3.metric(
+    "xG",
+    f"{player_shots['xG'].sum():.2f}"
+)
+
+player_col4.metric(
+    "xG per Shot",
+    f"{player_shots['xG'].mean():.3f}"
 )
 
 
