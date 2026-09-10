@@ -401,6 +401,22 @@ plt.title("Player xG vs Actual Goals — 2015/16 Premier League")
 
 plt.show()
 
+finishing_sorted = finishing.sort_values(
+    "Goals_minus_xG"
+)
+
+plt.barh(
+    finishing_sorted.index,
+    finishing_sorted["Goals_minus_xG"]
+)
+
+plt.xlabel("Goals − xG")
+plt.ylabel("Team")
+plt.title("Finishing Performance — 2015/16 Premier League")
+
+plt.tight_layout()
+plt.show()
+
 def calculate_team_stats(matches, team):
     wins = 0
     draws = 0
