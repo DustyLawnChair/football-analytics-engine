@@ -24,6 +24,10 @@ league_table = pd.read_csv(
     "data/processed/league_table.csv"
 )
 
+shot_data = pd.read_csv(
+    "data/processed/shot_data.csv"
+)
+
 
 # -----------------------------
 # Team Explorer
