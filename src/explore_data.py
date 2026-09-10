@@ -151,6 +151,11 @@ print(team_shot_analysis)
 
 shot_data = pd.DataFrame(all_shot_records)
 
+shot_data.to_csv(
+    "data/processed/shot_data.csv",
+    index=False
+)
+
 print("\nAnalyzed matches:", len(data_frames))
 print("Total shots:", len(shot_data))
 
