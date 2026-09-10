@@ -44,6 +44,10 @@ team_data = league_table[
     league_table["Team"] == selected_team
 ].iloc[0]
 
+team_shots = shot_data[
+    shot_data["Team"] == selected_team
+]
+
 
 # -----------------------------
 # Team Profile
@@ -71,6 +75,30 @@ col3.metric(
 col4.metric(
     "xG",
     f"{team_data['xG']:.2f}"
+)
+
+st.header(f"{selected_team} — Shot Profile")
+
+shot_col1, shot_col2, shot_col3, shot_col4 = st.columns(4)
+
+shot_col1.metric(
+    "Shots",
+    len(team_shots)
+)
+
+shot_col2.metric(
+    "Avg Shot Distance",
+    f"{team_shots['Distance'].mean():.2f}"
+)
+
+shot_col3.metric(
+    "xG per Shot",
+    f"{team_shots['xG'].mean():.3f}"
+)
+
+shot_col4.metric(
+    "Goals − xG",
+    f"{team_shots['Outcome'].eq('Goal').sum() - team_shots['xG'].sum():.2f}"
 )
 
 
