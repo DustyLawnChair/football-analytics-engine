@@ -151,6 +151,18 @@ print(team_shot_analysis)
 
 shot_data = pd.DataFrame(all_shot_records)
 
+shot_data["Shot_Zone"] = pd.cut(
+    shot_data["y"],
+    bins=[0, 20, 30, 50, 60, 80],
+    labels=[
+        "Wide Left",
+        "Left-Centre",
+        "Centre",
+        "Right-Centre",
+        "Wide Right"
+    ]
+)
+
 shot_data.to_csv(
     "data/processed/shot_data.csv",
     index=False

@@ -126,6 +126,22 @@ st.bar_chart(
     width="stretch"
 )
 
+st.subheader("Shot Distribution by Zone")
+
+zone_shots = (
+    team_shots
+    .groupby("Shot_Zone", observed=False)
+    .size()
+    .reset_index(name="Shots")
+)
+
+st.bar_chart(
+    zone_shots,
+    x="Shot_Zone",
+    y="Shots",
+    width="stretch"
+)
+
 
 # -----------------------------
 # League Overview
