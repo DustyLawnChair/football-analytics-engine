@@ -59,6 +59,12 @@ player_shots = shot_data[
     shot_data["Player"] == selected_player
 ]
 
+player_goals = player_shots["Outcome"].eq("Goal").sum()
+
+player_xg = player_shots["xG"].sum()
+
+goals_minus_xg = player_goals - player_xg
+
 
 # -----------------------------
 # Team Profile
@@ -156,6 +162,11 @@ st.bar_chart(
 st.header(f"{selected_player} — Player Profile")
 
 player_col1, player_col2, player_col3, player_col4 = st.columns(4)
+
+st.metric(
+    "Goals − xG",
+    f"{goals_minus_xg:.2f}"
+)
 
 player_col1.metric(
     "Shots",
