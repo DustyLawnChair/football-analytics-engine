@@ -28,7 +28,6 @@ shot_data = pd.read_csv(
     "data/processed/shot_data.csv"
 )
 
-
 # -----------------------------
 # Team Explorer
 # -----------------------------
@@ -48,16 +47,102 @@ team_shots = shot_data[
     shot_data["Team"] == selected_team
 ]
 
-players = sorted(shot_data["Player"].unique())
+
+# -----------------------------
+# Player Selection
+# -----------------------------
+
+team_players = sorted(
+    shot_data[
+        shot_data["Team"] == selected_team
+    ]["Player"].unique()
+)
 
 selected_player = st.sidebar.selectbox(
     "Select a player",
-    players
+    team_players
+)
+
+selected_player_2 = st.sidebar.selectbox(
+    "Compare with",
+    team_players
 )
 
 player_shots = shot_data[
     shot_data["Player"] == selected_player
 ]
+
+player_shots_2 = shot_data[
+    shot_data["Player"] == selected_player_2
+]
+
+# -----------------------------
+# Second Player Metrics
+# -----------------------------
+
+player_2_minutes = (
+    player_shots_2[["Match_ID", "Minutes"]]
+    .drop_duplicates()["Minutes"]
+    .sum()
+)
+
+player_2_goals = player_shots_2["Outcome"].eq("Goal").sum()
+player_2_xg = player_shots_2["xG"].sum()
+
+player_2_goals_minus_xg = player_2_goals - player_2_xg
+
+player_2_shots_per_90 = (
+    len(player_shots_2) / player_2_minutes * 90
+    if player_2_minutes > 0
+    else 0
+)
+
+player_2_goals_per_90 = (
+    player_2_goals / player_2_minutes * 90
+    if player_2_minutes > 0
+    else 0
+)
+
+player_2_xg_per_90 = (
+    player_2_xg / player_2_minutes * 90
+    if player_2_minutes > 0
+    else 0
+)
+
+player_2_goals_minus_xg_per_90 = (
+    player_2_goals_minus_xg / player_2_minutes * 90
+    if player_2_minutes > 0
+    else 0
+)
+
+player_2_goals_per_shot = (
+    player_2_goals / len(player_shots_2)
+    if len(player_shots_2) > 0
+    else 0
+)
+
+player_2_conversion_rate = (
+    player_2_goals / len(player_shots_2) * 100
+    if len(player_shots_2) > 0
+    else 0
+)
+
+player_2_avg_shot_distance = player_shots_2["Distance"].mean()
+
+player_2_shots_on_target = player_shots_2["Outcome"].isin(
+    ["Goal", "Saved"]
+).sum()
+
+player_2_shot_accuracy = (
+    player_2_shots_on_target / len(player_shots_2) * 100
+    if len(player_shots_2) > 0
+    else 0
+)
+
+
+# -----------------------------
+# Player Minutes
+# -----------------------------
 
 player_minutes = (
     player_shots[["Match_ID", "Minutes"]]
@@ -65,15 +150,46 @@ player_minutes = (
     .sum()
 )
 
+
+# -----------------------------
+# Player Core Metrics
+# -----------------------------
+
+player_goals = player_shots["Outcome"].eq("Goal").sum()
+player_xg = player_shots["xG"].sum()
+
+goals_minus_xg = player_goals - player_xg
+
+conversion_rate = (
+    player_goals / len(player_shots) * 100
+)
+
+goals_per_shot = (
+    player_goals / len(player_shots)
+    if len(player_shots) > 0
+    else 0
+)
+
+avg_shot_distance = player_shots["Distance"].mean()
+
+shots_on_target = player_shots["Outcome"].isin(
+    ["Goal", "Saved"]
+).sum()
+
+shot_accuracy = (
+    shots_on_target / len(player_shots) * 100
+)
+
+
+# -----------------------------
+# Player Rate Metrics
+# -----------------------------
+
 shots_per_90 = (
     len(player_shots) / player_minutes * 90
     if player_minutes > 0
     else 0
 )
-
-player_goals = player_shots["Outcome"].eq("Goal").sum()
-
-player_xg = player_shots["xG"].sum()
 
 goals_per_90 = (
     player_goals / player_minutes * 90
@@ -94,32 +210,45 @@ goals_minus_xg_per_90 = (
 )
 
 
-goals_minus_xg = player_goals - player_xg
+# -----------------------------
+# Player Comparison
+# -----------------------------
 
-conversion_rate = (
-    player_goals /
-    len(player_shots) *
-    100
-)
+st.subheader("Player Comparison")
 
-goals_per_shot = (
-    player_goals / len(player_shots)
-    if len(player_shots) > 0
-    else 0
-)
+comp_col1, comp_col2 = st.columns(2)
 
-avg_shot_distance = player_shots["Distance"].mean()
+with comp_col1:
+    st.write(f"### {selected_player}")
 
-shots_on_target = player_shots["Outcome"].isin(
-    ["Goal", "Saved"]
-).sum()
+    st.metric("Shots", len(player_shots))
+    st.metric("Goals", player_goals)
+    st.metric("xG", f"{player_xg:.2f}")
+    st.metric("Shots per 90", f"{shots_per_90:.2f}")
+    st.metric("Goals per 90", f"{goals_per_90:.2f}")
+    st.metric("xG per 90", f"{xg_per_90:.2f}")
+    st.metric("Goals − xG", f"{goals_minus_xg:.2f}")
+    st.metric("Goals − xG per 90", f"{goals_minus_xg_per_90:.2f}")
+    st.metric("Goals per Shot", f"{goals_per_shot:.3f}")
+    st.metric("Conversion Rate", f"{conversion_rate:.2f}%")
+    st.metric("Shot Accuracy", f"{shot_accuracy:.2f}%")
+    st.metric("Avg Shot Distance", f"{avg_shot_distance:.2f}m")
 
-shot_accuracy = (
-    shots_on_target /
-    len(player_shots) *
-    100
-)
+with comp_col2:
+    st.write(f"### {selected_player_2}")
 
+    st.metric("Shots", len(player_shots_2))
+    st.metric("Goals", player_2_goals)
+    st.metric("xG", f"{player_2_xg:.2f}")
+    st.metric("Shots per 90", f"{player_2_shots_per_90:.2f}")
+    st.metric("Goals per 90", f"{player_2_goals_per_90:.2f}")
+    st.metric("xG per 90", f"{player_2_xg_per_90:.2f}")
+    st.metric("Goals − xG", f"{player_2_goals_minus_xg:.2f}")
+    st.metric("Goals − xG per 90", f"{player_2_goals_minus_xg_per_90:.2f}")
+    st.metric("Goals per Shot", f"{player_2_goals_per_shot:.3f}")
+    st.metric("Conversion Rate", f"{player_2_conversion_rate:.2f}%")
+    st.metric("Shot Accuracy", f"{player_2_shot_accuracy:.2f}%")
+    st.metric("Avg Shot Distance", f"{player_2_avg_shot_distance:.2f}m")
 
 # -----------------------------
 # Team Profile
