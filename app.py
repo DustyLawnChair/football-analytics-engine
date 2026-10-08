@@ -77,6 +77,12 @@ player_stats["xG_per_90"] = (
     * 90
 )
 
+player_stats["Goals_minus_xG_per_90"] = (
+    (player_stats["Goals"] - player_stats["xG"])
+    / player_stats["Season_Minutes"]
+    * 90
+)
+
 # -----------------------------
 # Team Explorer
 # -----------------------------
@@ -140,7 +146,8 @@ min_minutes = st.sidebar.slider(
 ranking_options = {
     "Goals per 90": "Goals_per_90",
     "xG per 90": "xG_per_90",
-    "Shots per 90": "Shots_per_90"
+    "Shots per 90": "Shots_per_90",
+    "Goals - xG per 90": "Goals_minus_xG_per_90"
 }
 
 ranking_label = st.selectbox(
@@ -166,16 +173,29 @@ top_players = qualified_players.sort_values(
 
 st.subheader("League Player Rankings")
 
+ranking_display = top_players[
+    [
+        "Player",
+        "Team",
+        "Season_Minutes",
+        "Goals",
+        "Goals_per_90",
+        "xG_per_90",
+        "Shots_per_90",
+        "Goals_minus_xG_per_90"
+    ]
+].rename(
+    columns={
+        "Season_Minutes": "Minutes",
+        "Goals_per_90": "Goals / 90",
+        "xG_per_90": "xG / 90",
+        "Shots_per_90": "Shots / 90",
+        "Goals_minus_xG_per_90": "Goals − xG / 90"
+    }
+)
+
 st.dataframe(
-    top_players[
-        [
-            "Player",
-            "Team",
-            "Season_Minutes",
-            "Goals",
-            ranking_metric
-        ]
-    ],
+    ranking_display,
     hide_index=True,
     width="stretch"
 )
