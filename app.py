@@ -59,7 +59,26 @@ player_shots = shot_data[
     shot_data["Player"] == selected_player
 ]
 
+player_minutes = (
+    player_shots[["Match_ID", "Minutes"]]
+    .drop_duplicates()["Minutes"]
+    .sum()
+)
+
+shots_per_90 = (
+    len(player_shots) / player_minutes * 90
+    if player_minutes > 0
+    else 0
+)
+
 player_goals = player_shots["Outcome"].eq("Goal").sum()
+
+goals_per_90 = (
+    player_goals / player_minutes * 90
+    if player_minutes > 0
+    else 0
+)
+
 
 player_xg = player_shots["xG"].sum()
 
@@ -179,7 +198,7 @@ st.bar_chart(
 
 st.header(f"{selected_player} — Player Profile")
 
-player_col1, player_col2, player_col3, player_col4, player_col5, player_col6 = st.columns(6)
+player_col1, player_col2, player_col3, player_col4, player_col5, player_col6, player_col7, player_col8 = st.columns(8)
 
 player_col1.metric(
     "Shots",
@@ -209,6 +228,16 @@ player_col5.metric(
 player_col6.metric(
     "Shot Accuracy",
     f"{shot_accuracy:.2f}%"
+)
+
+player_col7.metric(
+    "Shots per 90",
+    f"{shots_per_90:.2f}"
+)
+
+player_col8.metric(
+    "Goals per 90",
+    f"{goals_per_90:.2f}"
 )
 
 st.subheader("Player Efficiency")

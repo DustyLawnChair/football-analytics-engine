@@ -40,6 +40,38 @@ def analyze_match(match):
         with open(events_file, "w") as file:
             json.dump(events, file)
 
+    player_minutes = {}
+
+    for event in events:
+        if event["type"]["name"] == "Starting XI":
+            lineup = event["tactics"]["lineup"]
+
+            for player in lineup:
+                player_id = player["player"]["id"]
+                player_name = player["player"]["name"]
+                player_minutes[player_id] = {
+                    "Player": player_name,
+                    "Team": event["team"]["name"],
+                    "Minutes": 90
+                }
+
+        elif event["type"]["name"] == "Substitution":
+            minute = event["minute"]
+
+            player_off = event["player"]["id"]
+            player_on = event["substitution"]["replacement"]["id"]
+
+            if player_off in player_minutes:
+                player_minutes[player_off]["Minutes"] = minute
+
+            replacement = event["substitution"]["replacement"]
+
+            player_minutes[player_on] = {
+                "Player": replacement["name"],
+                "Team": event["team"]["name"],
+                "Minutes": 90 - minute
+            }
+
     shots = []
     shot_records = []
 
@@ -67,13 +99,15 @@ def analyze_match(match):
             shot_records.append({
                 "Team": event["team"]["name"],
                 "Player": event["player"]["name"],
+                "Match_ID": match_id,
                 "x": x,
                 "y": y,
                 "xG": event["shot"]["statsbomb_xg"],
                 "Distance": distance,
                 "Outcome": event["shot"]["outcome"]["name"],
                 "Body Part": event["shot"]["body_part"]["name"],
-                "Shot Type": event["shot"]["type"]["name"]
+                "Shot Type": event["shot"]["type"]["name"],
+                "Minutes": player_minutes[event["player"]["id"]]["Minutes"]
             })
     shot_counts = {}
 
@@ -150,6 +184,8 @@ print("\nGROUPED SHOT DATA TEST 123:")
 print(team_shot_analysis)
 
 shot_data = pd.DataFrame(all_shot_records)
+
+
 
 shot_data["Shot_Zone"] = pd.cut(
     shot_data["y"],
