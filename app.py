@@ -211,44 +211,64 @@ goals_minus_xg_per_90 = (
 
 
 # -----------------------------
-# Player Comparison
+# Player Comparison Display
 # -----------------------------
 
 st.subheader("Player Comparison")
 
-comp_col1, comp_col2 = st.columns(2)
+comparison_data = {
+    "Metric": [
+        "Shots",
+        "Goals",
+        "xG",
+        "Shots per 90",
+        "Goals per 90",
+        "xG per 90",
+        "Goals − xG",
+        "Goals − xG per 90",
+        "Goals per Shot",
+        "Conversion Rate",
+        "Shot Accuracy",
+        "Avg Shot Distance"
+    ],
+    selected_player: [
+    f"{len(player_shots)}",
+    f"{player_goals}",
+    f"{player_xg:.2f}",
+    f"{shots_per_90:.2f}",
+    f"{goals_per_90:.2f}",
+    f"{xg_per_90:.2f}",
+    f"{goals_minus_xg:.2f}",
+    f"{goals_minus_xg_per_90:.2f}",
+    f"{goals_per_shot:.3f}",
+    f"{conversion_rate:.2f}%",
+    f"{shot_accuracy:.2f}%",
+    f"{avg_shot_distance:.2f}m"
+    ],
 
-with comp_col1:
-    st.write(f"### {selected_player}")
+    selected_player_2: [
+    f"{len(player_shots_2)}",
+    f"{player_2_goals}",
+    f"{player_2_xg:.2f}",
+    f"{player_2_shots_per_90:.2f}",
+    f"{player_2_goals_per_90:.2f}",
+    f"{player_2_xg_per_90:.2f}",
+    f"{player_2_goals_minus_xg:.2f}",
+    f"{player_2_goals_minus_xg_per_90:.2f}",
+    f"{player_2_goals_per_shot:.3f}",
+    f"{player_2_conversion_rate:.2f}%",
+    f"{player_2_shot_accuracy:.2f}%",
+    f"{player_2_avg_shot_distance:.2f}m"
+    ]
+}
 
-    st.metric("Shots", len(player_shots))
-    st.metric("Goals", player_goals)
-    st.metric("xG", f"{player_xg:.2f}")
-    st.metric("Shots per 90", f"{shots_per_90:.2f}")
-    st.metric("Goals per 90", f"{goals_per_90:.2f}")
-    st.metric("xG per 90", f"{xg_per_90:.2f}")
-    st.metric("Goals − xG", f"{goals_minus_xg:.2f}")
-    st.metric("Goals − xG per 90", f"{goals_minus_xg_per_90:.2f}")
-    st.metric("Goals per Shot", f"{goals_per_shot:.3f}")
-    st.metric("Conversion Rate", f"{conversion_rate:.2f}%")
-    st.metric("Shot Accuracy", f"{shot_accuracy:.2f}%")
-    st.metric("Avg Shot Distance", f"{avg_shot_distance:.2f}m")
+comparison_df = pd.DataFrame(comparison_data)
 
-with comp_col2:
-    st.write(f"### {selected_player_2}")
-
-    st.metric("Shots", len(player_shots_2))
-    st.metric("Goals", player_2_goals)
-    st.metric("xG", f"{player_2_xg:.2f}")
-    st.metric("Shots per 90", f"{player_2_shots_per_90:.2f}")
-    st.metric("Goals per 90", f"{player_2_goals_per_90:.2f}")
-    st.metric("xG per 90", f"{player_2_xg_per_90:.2f}")
-    st.metric("Goals − xG", f"{player_2_goals_minus_xg:.2f}")
-    st.metric("Goals − xG per 90", f"{player_2_goals_minus_xg_per_90:.2f}")
-    st.metric("Goals per Shot", f"{player_2_goals_per_shot:.3f}")
-    st.metric("Conversion Rate", f"{player_2_conversion_rate:.2f}%")
-    st.metric("Shot Accuracy", f"{player_2_shot_accuracy:.2f}%")
-    st.metric("Avg Shot Distance", f"{player_2_avg_shot_distance:.2f}m")
+st.dataframe(
+    comparison_df,
+    hide_index=True,
+    width="stretch"
+)
 
 # -----------------------------
 # Team Profile
