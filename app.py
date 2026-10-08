@@ -29,6 +29,55 @@ shot_data = pd.read_csv(
 )
 
 # -----------------------------
+# League Player Data
+# -----------------------------
+
+player_minutes_data = (
+    shot_data[
+        ["Team", "Player", "Match_ID", "Minutes"]
+    ]
+    .drop_duplicates()
+    .groupby(["Team", "Player"], as_index=False)["Minutes"]
+    .sum()
+    .rename(columns={"Minutes": "Season_Minutes"})
+)
+
+player_stats = (
+    shot_data
+    .groupby(["Team", "Player"])
+    .agg(
+        Shots=("Player", "size"),
+        Goals=("Outcome", lambda x: (x == "Goal").sum()),
+        xG=("xG", "sum")
+    )
+    .reset_index()
+)
+
+player_stats = player_stats.merge(
+    player_minutes_data,
+    on=["Team", "Player"],
+    how="left"
+)
+
+player_stats["Shots_per_90"] = (
+    player_stats["Shots"]
+    / player_stats["Season_Minutes"]
+    * 90
+)
+
+player_stats["Goals_per_90"] = (
+    player_stats["Goals"]
+    / player_stats["Season_Minutes"]
+    * 90
+)
+
+player_stats["xG_per_90"] = (
+    player_stats["xG"]
+    / player_stats["Season_Minutes"]
+    * 90
+)
+
+# -----------------------------
 # Team Explorer
 # -----------------------------
 
@@ -66,6 +115,48 @@ selected_player = st.sidebar.selectbox(
 selected_player_2 = st.sidebar.selectbox(
     "Compare with",
     team_players
+)
+
+min_minutes = st.sidebar.slider(
+    "Minimum minutes",
+    min_value=0,
+    max_value=3000,
+    value=900,
+    step=90
+)
+
+# -----------------------------
+# Apply Minimum Minutes Filter
+# -----------------------------
+
+qualified_players = player_stats[
+    player_stats["Season_Minutes"] >= min_minutes
+].copy()
+
+
+# -----------------------------
+# Player Rankings
+# -----------------------------
+
+st.subheader("League Player Rankings")
+
+top_scorers_per_90 = qualified_players.sort_values(
+    "Goals_per_90",
+    ascending=False
+).head(10)
+
+st.dataframe(
+    top_scorers_per_90[
+        [
+            "Player",
+            "Team",
+            "Season_Minutes",
+            "Goals",
+            "Goals_per_90"
+        ]
+    ],
+    hide_index=True,
+    width="stretch"
 )
 
 player_shots = shot_data[
