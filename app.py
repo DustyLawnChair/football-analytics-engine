@@ -102,6 +102,12 @@ conversion_rate = (
     100
 )
 
+goals_per_shot = (
+    player_goals / len(player_shots)
+    if len(player_shots) > 0
+    else 0
+)
+
 avg_shot_distance = player_shots["Distance"].mean()
 
 shots_on_target = player_shots["Outcome"].isin(
@@ -264,7 +270,7 @@ player_col10.metric(
 
 st.subheader("Player Efficiency")
 
-eff_col1, eff_col2, eff_col3 = st.columns(3)
+eff_col1, eff_col2, eff_col3, eff_col4 = st.columns(4)
 
 eff_col1.metric(
     "Goals − xG",
@@ -279,6 +285,11 @@ eff_col2.metric(
 eff_col3.metric(
     "Avg Shot Distance",
     f"{avg_shot_distance:.2f}"
+)
+
+eff_col4.metric(
+    "Goals per Shot",
+    f"{goals_per_shot:.3f}"
 )
 
 # -----------------------------
