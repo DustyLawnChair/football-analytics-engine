@@ -87,6 +87,12 @@ xg_per_90 = (
     else 0
 )
 
+goals_minus_xg_per_90 = (
+    (player_goals - player_xg) / player_minutes * 90
+    if player_minutes > 0
+    else 0
+)
+
 
 goals_minus_xg = player_goals - player_xg
 
@@ -204,7 +210,7 @@ st.bar_chart(
 
 st.header(f"{selected_player} — Player Profile")
 
-player_col1, player_col2, player_col3, player_col4, player_col5, player_col6, player_col7, player_col8, player_col9 = st.columns(9)
+player_col1, player_col2, player_col3, player_col4, player_col5, player_col6, player_col7, player_col8, player_col9, player_col10 = st.columns(10)
 
 player_col1.metric(
     "Shots",
@@ -249,6 +255,11 @@ player_col8.metric(
 player_col9.metric(
     "xG per 90",
     f"{xg_per_90:.2f}"
+)
+
+player_col10.metric(
+    "Goals − xG / 90",
+    f"{goals_minus_xg_per_90:.2f}"
 )
 
 st.subheader("Player Efficiency")
