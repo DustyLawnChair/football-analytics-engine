@@ -73,6 +73,16 @@ conversion_rate = (
 
 avg_shot_distance = player_shots["Distance"].mean()
 
+shots_on_target = player_shots["Outcome"].isin(
+    ["Goal", "Saved"]
+).sum()
+
+shot_accuracy = (
+    shots_on_target /
+    len(player_shots) *
+    100
+)
+
 
 # -----------------------------
 # Team Profile
@@ -169,22 +179,7 @@ st.bar_chart(
 
 st.header(f"{selected_player} — Player Profile")
 
-player_col1, player_col2, player_col3, player_col4 = st.columns(4)
-
-st.metric(
-    "Goals − xG",
-    f"{goals_minus_xg:.2f}"
-)
-
-st.metric(
-    "Conversion Rate",
-    f"{conversion_rate:.2f}%"
-)
-
-st.metric(
-    "Avg Shot Distance",
-    f"{avg_shot_distance:.2f}"
-)
+player_col1, player_col2, player_col3, player_col4, player_col5, player_col6 = st.columns(6)
 
 player_col1.metric(
     "Shots",
@@ -206,6 +201,34 @@ player_col4.metric(
     f"{player_shots['xG'].mean():.3f}"
 )
 
+player_col5.metric(
+    "Shots on Target",
+    int(shots_on_target)
+)
+
+player_col6.metric(
+    "Shot Accuracy",
+    f"{shot_accuracy:.2f}%"
+)
+
+st.subheader("Player Efficiency")
+
+eff_col1, eff_col2, eff_col3 = st.columns(3)
+
+eff_col1.metric(
+    "Goals − xG",
+    f"{goals_minus_xg:.2f}"
+)
+
+eff_col2.metric(
+    "Conversion Rate",
+    f"{conversion_rate:.2f}%"
+)
+
+eff_col3.metric(
+    "Avg Shot Distance",
+    f"{avg_shot_distance:.2f}"
+)
 
 # -----------------------------
 # League Overview
