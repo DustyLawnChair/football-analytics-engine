@@ -117,6 +117,14 @@ selected_player_2 = st.sidebar.selectbox(
     team_players
 )
 
+player_shots = shot_data[
+    shot_data["Player"] == selected_player
+]
+
+player_shots_2 = shot_data[
+    shot_data["Player"] == selected_player_2
+]
+
 min_minutes = st.sidebar.slider(
     "Minimum minutes",
     min_value=0,
@@ -129,9 +137,27 @@ min_minutes = st.sidebar.slider(
 # Apply Minimum Minutes Filter
 # -----------------------------
 
+ranking_options = {
+    "Goals per 90": "Goals_per_90",
+    "xG per 90": "xG_per_90",
+    "Shots per 90": "Shots_per_90"
+}
+
+ranking_label = st.selectbox(
+    "Rank players by",
+    ranking_options.keys()
+)
+
+ranking_metric = ranking_options[ranking_label]
+
 qualified_players = player_stats[
     player_stats["Season_Minutes"] >= min_minutes
 ].copy()
+
+top_players = qualified_players.sort_values(
+    ranking_metric,
+    ascending=False
+).head(10)
 
 
 # -----------------------------
@@ -140,32 +166,19 @@ qualified_players = player_stats[
 
 st.subheader("League Player Rankings")
 
-top_scorers_per_90 = qualified_players.sort_values(
-    "Goals_per_90",
-    ascending=False
-).head(10)
-
 st.dataframe(
-    top_scorers_per_90[
+    top_players[
         [
             "Player",
             "Team",
             "Season_Minutes",
             "Goals",
-            "Goals_per_90"
+            ranking_metric
         ]
     ],
     hide_index=True,
     width="stretch"
 )
-
-player_shots = shot_data[
-    shot_data["Player"] == selected_player
-]
-
-player_shots_2 = shot_data[
-    shot_data["Player"] == selected_player_2
-]
 
 # -----------------------------
 # Second Player Metrics
