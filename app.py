@@ -65,6 +65,14 @@ player_xg = player_shots["xG"].sum()
 
 goals_minus_xg = player_goals - player_xg
 
+conversion_rate = (
+    player_goals /
+    len(player_shots) *
+    100
+)
+
+avg_shot_distance = player_shots["Distance"].mean()
+
 
 # -----------------------------
 # Team Profile
@@ -166,6 +174,16 @@ player_col1, player_col2, player_col3, player_col4 = st.columns(4)
 st.metric(
     "Goals − xG",
     f"{goals_minus_xg:.2f}"
+)
+
+st.metric(
+    "Conversion Rate",
+    f"{conversion_rate:.2f}%"
+)
+
+st.metric(
+    "Avg Shot Distance",
+    f"{avg_shot_distance:.2f}"
 )
 
 player_col1.metric(
