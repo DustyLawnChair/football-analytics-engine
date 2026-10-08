@@ -218,6 +218,7 @@ st.subheader("Player Comparison")
 
 comparison_data = {
     "Metric": [
+        "Minutes",
         "Shots",
         "Goals",
         "xG",
@@ -232,6 +233,7 @@ comparison_data = {
         "Avg Shot Distance"
     ],
     selected_player: [
+    f"{player_minutes}",
     f"{len(player_shots)}",
     f"{player_goals}",
     f"{player_xg:.2f}",
@@ -247,6 +249,7 @@ comparison_data = {
     ],
 
     selected_player_2: [
+    f"{player_2_minutes}",
     f"{len(player_shots_2)}",
     f"{player_2_goals}",
     f"{player_2_xg:.2f}",
